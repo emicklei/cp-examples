@@ -10,8 +10,6 @@ import (
 	. "github.com/jakecoffman/cp/v2"
 )
 
-var tryout = flag.Int("tryout", 0, "number of the experiment")
-
 const (
 	ballRadius  = 15
 	ballMass    = 0.5
@@ -33,29 +31,28 @@ func main() {
 	posB := Vector{200, 60}
 	boxOffset := Vector{0, -120}
 
-	if *tryout == 0 {
-		// left
-		body1 := addLever(space, posA, boxOffset)
-		space.AddConstraint(NewPivotJoint(body1, space.StaticBody, boxOffset.Add(posA)))
+	var body1, body2 *Body
 
-		staticRotaryA := space.AddBody(NewStaticBody())
-		space.AddConstraint(NewRotaryLimitJoint(body1, staticRotaryA, -swing60*2, -swing60))
+	// left
+	body1 = addLever(space, posA, boxOffset)
+	space.AddConstraint(NewPivotJoint(body1, space.StaticBody, boxOffset.Add(posA)))
 
-		// right
-		body2 := addLever(space, posB, boxOffset)
-		space.AddConstraint(NewPivotJoint(body2, space.StaticBody, boxOffset.Add(posB)))
+	staticRotaryA := space.AddBody(NewStaticBody())
+	space.AddConstraint(NewRotaryLimitJoint(body1, staticRotaryA, -swing60*2, -swing60))
 
-		staticRotaryB := space.AddBody(NewStaticBody())
-		space.AddConstraint(NewRotaryLimitJoint(body2, staticRotaryB, swing60, 2*swing60))
+	// right
+	body2 = addLever(space, posB, boxOffset)
+	space.AddConstraint(NewPivotJoint(body2, space.StaticBody, boxOffset.Add(posB)))
 
-		// use "a" and "l" keys to trigger left and right lever
-		examples.HandleKeyFunc = func(char rune) {
-			if char == 'a' {
-				body1.ApplyImpulseAtLocalPoint(Vector{impluseX, 0}, Vector{0, -leverLength / 2})
-			}
-			if char == 'l' {
-				body2.ApplyImpulseAtLocalPoint(Vector{-impluseX, 0}, Vector{0, -leverLength / 2})
-			}
+	space.AddConstraint(NewRotaryLimitJoint(body2, space.StaticBody, swing60, 2*swing60))
+
+	// use "a" and "l" keys to trigger left and right lever
+	examples.HandleKeyFunc = func(char rune) {
+		if char == 'a' {
+			body1.ApplyImpulseAtLocalPoint(Vector{impluseX, 0}, Vector{0, -leverLength / 2})
+		}
+		if char == 'l' {
+			body2.ApplyImpulseAtLocalPoint(Vector{-impluseX, 0}, Vector{0, -leverLength / 2})
 		}
 	}
 
@@ -72,7 +69,12 @@ func main() {
 		}
 	}()
 
-	examples.Main(space, 1.0/60.0, update, examples.DefaultDraw)
+	examples.Main(space, 1.0/60.0, update, draw)
+}
+
+func draw(space *Space) {
+	examples.DefaultDraw(space)
+	examples.DrawString(Vector{-300, 100}, "Use the keys 'a' and 'l' to hit the levers")
 }
 
 func update(space *Space, dt float64) {
